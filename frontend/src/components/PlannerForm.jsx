@@ -5,6 +5,8 @@ import { DateRange } from 'react-date-range'
 
 import { format } from 'date-fns'
 
+const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:5001'
+
 function PlannerForm() {
 
   const cities = [
@@ -172,25 +174,11 @@ function PlannerForm() {
         setLoading(true)
 
         const response =
-          await fetch(
-            'http://localhost:5001/generate-trip',
-            {
-
-              method: 'POST',
-
-              headers: {
-
-                'Content-Type':
-                  'application/json',
-
-              },
-
-              body: JSON.stringify(
-                tripData
-              ),
-
-            }
-          )
+          await fetch(`${API_BASE}/generate-trip`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(tripData),
+          })
 
         const data =
           await response.json()
