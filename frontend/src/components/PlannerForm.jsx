@@ -5,7 +5,11 @@ import { DateRange } from 'react-date-range'
 
 import { format } from 'date-fns'
 
-const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:5001'
+const API_BASE = (() => {
+  const rawUrl = import.meta.env.VITE_API_URL
+  if (!rawUrl) return 'http://localhost:5001'
+  return rawUrl.replace(/\/+$/, '')
+})()
 
 function PlannerForm() {
 
@@ -173,15 +177,38 @@ function PlannerForm() {
 
         setLoading(true)
 
-        const response =
-          await fetch(`${API_BASE}/generate-trip`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(tripData),
-          })
+        const response = await fetch(`${API_BASE}/generate-trip`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(tripData),
+        })
 
-        const data =
-          await response.json()
+        const contentType = response.headers.get('content-type') || ''
+        let data = null
+
+        if (contentType.includes('application/json')) {
+          data = await response.json()
+        } else {
+          const text = await response.text()
+          console.error('Trip API returned non-JSON response:', text)
+
+          if (!response.ok) {
+            alert(
+              text || 'Trip generation failed: server returned an invalid response.'
+            )
+            setLoading(false)
+            return
+          }
+
+          try {
+            data = JSON.parse(text)
+          } catch (parseError) {
+            console.error('Invalid JSON from trip API:', parseError)
+            alert('Trip generation failed: invalid server response.')
+            setLoading(false)
+            return
+          }
+        }
 
         console.log(data)
 
@@ -195,10 +222,7 @@ function PlannerForm() {
           return
         }
 
-        if (
-          !data ||
-          !data.itinerary
-        ) {
+        if (!data || !data.itinerary) {
 
           alert(
             'Trip generation failed'

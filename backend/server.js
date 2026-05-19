@@ -247,6 +247,12 @@ FORMAT:
 
 })
 
+app.use((req, res) => {
+  res.status(404).json({
+    error: `Route ${req.method} ${req.originalUrl} not found`,
+  })
+})
+
 const PORT = process.env.PORT || 5001
 
 app.listen(PORT, () => {
