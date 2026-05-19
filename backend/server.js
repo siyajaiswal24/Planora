@@ -7,19 +7,27 @@ dotenv.config()
 const app = express()
 
 // CORS configuration supporting multiple environments
+const FRONTEND_URL = process.env.FRONTEND_URL
 const allowedOrigins = [
-  process.env.FRONTEND_URL,
+  FRONTEND_URL,
   'http://localhost:5173',
   'http://localhost:3000',
-]
+].filter(Boolean)
 
 app.use(cors({
   origin: (origin, callback) => {
-    if (!origin || allowedOrigins.includes(origin)) {
-      callback(null, true)
-    } else {
-      callback(new Error('Not allowed by CORS'))
+    if (!origin) {
+      return callback(null, true)
     }
+
+    const normalizedOrigin = origin.replace(/\/$/, '')
+    const isAllowedVercel = normalizedOrigin.endsWith('.vercel.app')
+
+    if (allowedOrigins.includes(normalizedOrigin) || isAllowedVercel) {
+      return callback(null, true)
+    }
+
+    return callback(new Error(`Not allowed by CORS: ${origin}`))
   },
   credentials: true,
 }))
